@@ -1,0 +1,53 @@
+@model Dự_Án_CNPM.Models.Card
+
+@{
+    ViewData["Title"] = "Chỉnh sửa Thẻ";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white py-3 border-0">
+                <h4 class="mb-0"><i class="bi bi-pencil me-2"></i> Chỉnh sửa Thẻ</h4>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Edit">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+                    <input type="hidden" asp-for="CardId" />
+
+                    <div class="mb-3">
+                        <label asp-for="CardId" class="form-label fw-bold">Mã Thẻ (Card ID)</label>
+                        <input asp-for="CardId" class="form-control" disabled />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Status" class="form-label fw-bold">Trạng Thái</label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="Available">Sẵn sàng (Available)</option>
+                            <option value="InUse">Đang sử dụng (InUse)</option>
+                            <option value="Locked">Đã Khóa (Locked)</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Note" class="form-label fw-bold">Ghi Chú</label>
+                        <textarea asp-for="Note" class="form-control" rows="3" placeholder="Ghi chú về thẻ..."></textarea>
+                        <span asp-validation-for="Note" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 rounded-3 shadow-sm">
+                            <i class="bi bi-save me-1"></i> Cập Nhật
+                        </button>
+                        <a asp-action="Index" class="btn btn-light py-2 rounded-3">Quay Lại</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

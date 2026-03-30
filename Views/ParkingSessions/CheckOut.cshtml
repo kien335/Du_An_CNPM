@@ -1,0 +1,313 @@
+@model Dự_Án_CNPM.Models.ParkingSession
+
+@{
+    ViewData["Title"] = "Trạm Vận Hành Một Điểm Chạm";
+}
+
+<div class="container-fluid py-2">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="display-6 fw-bold text-dark mb-0">Hệ Thống Kiểm Soát Xe Ra <span class="badge bg-primary fs-6 ms-2">Một Điểm Chạm</span></h1>
+            <p class="text-muted opacity-75 mb-0">Hợp nhất quy trình Đối soát - Thanh toán - Giải phóng.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-2"></i> Quay lại Dashboard
+        </a>
+    </div>
+
+    <div class="row g-3">
+        <!-- LEFT: Live Camera -->
+        <div class="col-md-7">
+            <div class="card card-modern border-0 h-100 shadow-lg overflow-hidden bg-dark">
+                <div class="card-header bg-transparent border-0 p-3 d-flex justify-content-between align-items-center position-absolute w-100" style="z-index: 10;">
+                    <span class="badge bg-danger animate__animated animate__flash animate__infinite px-3 py-2">
+                        <i class="bi bi-camera-video-fill me-1"></i> EXIT CAMERA 01
+                    </span>
+                    <button class="btn btn-sm btn-outline-light rounded-pill border-0" onclick="initCamera()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                
+                <div class="video-container position-relative bg-black d-flex align-items-center justify-content-center" style="height: 520px;">
+                    <video id="webcamExit" autoplay playsinline class="w-100 h-100" style="object-fit: cover;"></video>
+                    <canvas id="captureCanvasExit" class="d-none" width="640" height="480"></canvas>
+                    
+                    <!-- Fixed Overlay Grid -->
+                    <div class="position-absolute w-100 h-100 border border-info border-2 opacity-25" style="pointer-events: none; border-style: dashed !important; border-width: 3px !important; margin: 60px; width: calc(100% - 120px); height: calc(100% - 120px);"></div>
+                    <div class="position-absolute top-50 start-50 translate-middle text-info opacity-50"><i class="bi bi-plus-lg display-1"></i></div>
+                </div>
+
+                <div class="card-footer bg-dark border-0 p-3">
+                    <button type="button" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-lg" onclick="captureAndVerify()">
+                        <i class="bi bi-camera-fill me-2"></i> 1. CHỤP ẢNH ĐỐI SOÁT (EXIT CAPTURE)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Integrated Operator Panel -->
+        <div class="col-md-5">
+            <div id="operatorPanel" class="card card-modern border-0 h-100 shadow-lg transition-all" style="transition: background-color 0.5s ease;">
+                <div class="card-body p-4 d-flex flex-column">
+                    <!-- Step 1: RFID Scan -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-uppercase small text-primary mb-2"><i class="bi bi-upc-scan"></i> QUÉT THẺ TỪ (RFID SCAN)</label>
+                        <div class="input-group input-group-lg shadow-sm rounded-4 overflow-hidden border-2 border-primary">
+                            <span class="input-group-text bg-primary text-white border-0"><i class="bi bi-credit-card"></i></span>
+                            <input type="text" id="rfidExit" class="form-control border-0 fw-bold" placeholder="NHẬP MÃ HOẶC QUÉT..." autofocus />
+                        </div>
+                    </div>
+
+                    <div id="processingArea" class="d-none animate__animated animate__fadeIn flex-grow-1">
+                        <!-- Step 2: Side-by-Side Comparison -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-uppercase small text-muted mb-2"><i class="bi bi-images"></i> ĐỐI SOÁT HÌNH ẢNH (COMPARISON)</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="bg-white p-2 rounded-4 border shadow-sm">
+                                        <span class="d-block text-center x-small fw-bold text-success text-uppercase mb-1">ẢNH LÚC VÀO (IN)</span>
+                                        <img id="imgIn" class="w-100 rounded-3 border" style="height: 140px; object-fit: cover;" src="/api/placeholder/300/200" />
+                                        <div id="plateIn" class="text-center fw-bold fs-5 mt-1">---</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-white p-2 rounded-4 border shadow-sm">
+                                        <span class="d-block text-center x-small fw-bold text-danger text-uppercase mb-1">ẢNH LÚC RA (OUT)</span>
+                                        <img id="imgOut" class="w-100 rounded-3 border" style="height: 140px; object-fit: cover;" src="/api/placeholder/300/200" />
+                                        <div id="plateOut" class="text-center fw-bold fs-5 mt-1 text-primary">---</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Billing Table -->
+                        <div class="mb-4 bg-white p-3 rounded-4 border shadow-sm">
+                            <label class="form-label fw-bold text-uppercase small text-muted mb-3"><i class="bi bi-receipt"></i> BẢNG KÊ CHI PHÍ (BILLING)</label>
+                            <table class="table table-sm table-borderless mb-0 align-middle">
+                                <tr>
+                                    <td class="text-muted small">Thời điểm vào:</td>
+                                    <td id="infoIn" class="text-end fw-bold small"></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted small">Thời lượng gửi:</td>
+                                    <td id="infoDur" class="text-end fw-bold text-primary"></td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td class="fw-bold pt-2">THÀNH TIỀN:</td>
+                                    <td id="infoTotal" class="text-end fw-bold fs-4 text-dark pt-2">0 VNĐ</td>
+                                </tr>
+                            </table>
+                            <div id="monthlyLabel" class="mt-2 d-none">
+                                <span class="badge bg-success-subtle text-success border border-success px-3 py-2 w-100">HỆ THỐNG: VÉ THÁNG (FREE)</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Payments -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-uppercase small text-muted mb-2"><i class="bi bi-wallet2"></i> PHƯƠNG THỨC THANH TOÁN (PAYMENT)</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="radio" name="paymentType" class="btn-check" id="payCash" checked>
+                                    <label class="btn btn-outline-primary w-100 py-2 rounded-3 fw-bold" for="payCash">
+                                        <i class="bi bi-cash me-1"></i> TIỀN MẶT
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" name="paymentType" class="btn-check" id="payQR">
+                                    <label class="btn btn-outline-primary w-100 py-2 rounded-3 fw-bold" for="payQR">
+                                        <i class="bi bi-qr-code me-1"></i> QUÉT QR
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- QR Dynamic Area -->
+                            <div id="qrArea" class="mt-3 text-center p-3 bg-white border rounded-4 d-none animate__animated animate__zoomIn">
+                                <img id="qrImg" src="" class="img-fluid rounded shadow-sm mb-2" style="max-height: 140px;" />
+                                <p class="x-small text-muted mb-0">Quét mã VietQR để thanh toán nhanh</p>
+                            </div>
+                        </div>
+
+                        <!-- Warning Text (Hidden) -->
+                        <div id="warningAlert" class="alert alert-danger border-0 d-none animate__animated animate__shakeX">
+                            <i class="bi bi-exclamation-octagon-fill me-2"></i> <strong>CẢNH BÁO:</strong> BIỂN SỐ KHÔNG KHỚP!
+                        </div>
+
+                        <form asp-action="CheckOut" method="post" id="formFinal">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="cardId" id="hCardId" />
+                            <input type="hidden" name="checkOutImage" id="hCheckOutImage" />
+                            <input type="hidden" name="totalPrice" id="hTotalPrice" />
+                            
+                            <div class="d-grid mt-4">
+                                <button type="submit" id="btnRelease" class="btn btn-success btn-lg py-3 rounded-pill shadow-lg fw-bold" disabled>
+                                    <i class="bi bi-lock-fill me-2" id="btnIcon"></i> XÁC NHẬN & CHO XE RA
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small { font-size: 0.7rem; }
+    .transition-all { transition: all 0.3s ease-in-out; }
+    #operatorPanel.bg-danger-subtle {
+        border: 3px solid #dc3545 !important;
+        box-shadow: 0 0 20px rgba(220, 53, 69, 0.3) !important;
+    }
+</style>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <script>
+        const video = document.getElementById('webcamExit');
+        const canvas = document.getElementById('captureCanvasExit');
+        const rfidInput = document.getElementById('rfidExit');
+        
+        let session = null;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioCtx();
+
+        function playSound(freq, duration, type = 'sine') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.type = type;
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) { console.error("Camera Error:", err); }
+        }
+
+        // --- STEP 1: RFID Identification ---
+        rfidInput.addEventListener('input', _.debounce(async (e) => {
+            const cardId = e.target.value.trim();
+            if (cardId.length < 1) return;
+
+            try {
+                const response = await fetch(`/ParkingSessions/GetActiveSession?cardId=${cardId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    session = data;
+                    $('#processingArea').removeClass('d-none');
+                    $('#hCardId').val(cardId);
+                    
+                    // Update Billing
+                    $('#infoIn').text(data.checkInTime);
+                    $('#infoDur').text(data.elapsedTime);
+                    $('#infoTotal').text(data.totalPriceFormatted);
+                    $('#hTotalPrice').val(data.totalPrice);
+                    
+                    // Update In-Image
+                    $('#imgIn').attr('src', data.checkInImage || '/api/placeholder/300/200');
+                    $('#plateIn').text(data.plate);
+
+                    if (data.isMonthly) {
+                        $('#monthlyLabel').removeClass('d-none');
+                        $('#payQR').parent().addClass('d-none');
+                        enableButton(true);
+                    } else {
+                        $('#monthlyLabel').addClass('d-none');
+                        $('#payQR').parent().removeClass('d-none');
+                        validateFlow();
+                    }
+                    playSound(660, 0.2);
+                } else {
+                    $('#processingArea').addClass('d-none');
+                    playSound(220, 0.3, 'sawtooth');
+                }
+            } catch (err) { console.error(err); }
+        }, 300));
+
+        // --- STEP 2: Exit Capture & Verification ---
+        function captureAndVerify() {
+            if (!session) {
+                alert("Vui lòng quét thẻ trước!");
+                return;
+            }
+
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            
+            $('#imgOut').attr('src', dataUrl);
+            $('#hCheckOutImage').val(dataUrl);
+
+            // Mock OCR 
+            const mockPlates = ['30A-999.88', '29B-123.45', '51D-888.88', '37A-666.66'];
+            const scanned = Math.random() > 0.4 ? session.plate : mockPlates[Math.floor(Math.random() * mockPlates.length)];
+            $('#plateOut').text(scanned);
+
+            // Security Check UI
+            const isMatch = scanned === session.plate;
+            if (isMatch) {
+                $('#operatorPanel').removeClass('bg-danger-subtle');
+                $('#warningAlert').addClass('d-none');
+                playSound(880, 0.1);
+            } else {
+                $('#operatorPanel').addClass('bg-danger-subtle');
+                $('#warningAlert').removeClass('d-none');
+                playSound(440, 0.5, 'square');
+                setTimeout(() => playSound(330, 0.5, 'square'), 500);
+            }
+            validateFlow();
+        }
+
+        // --- STEP 3: Payment Selection ---
+        $('input[name="paymentType"]').on('change', function() {
+            if (this.id === 'payQR') {
+                const amount = $('#hTotalPrice').val();
+                const qrUrl = `https://img.vietqr.io/image/970415-123456789-compact.png?amount=${amount}&addInfo=Xe+Ra+${session.plate}`;
+                $('#qrImg').attr('src', qrUrl);
+                $('#qrArea').removeClass('d-none');
+            } else {
+                $('#qrArea').addClass('d-none');
+            }
+            validateFlow();
+        });
+
+        function validateFlow() {
+            if (!session) return;
+            if (session.isMonthly) { enableButton(true); return; }
+
+            const captured = $('#hCheckOutImage').val() !== "";
+            const paymentSelected = $('input[name="paymentType"]:checked').length > 0;
+            enableButton(captured && paymentSelected);
+        }
+
+        function enableButton(enabled) {
+            const btn = $('#btnRelease');
+            const icon = $('#btnIcon');
+            if (enabled) {
+                btn.prop('disabled', false).removeClass('btn-success').addClass('btn-success animate__animated animate__pulse');
+                icon.removeClass('bi-lock-fill').addClass('bi-unlock-fill');
+            } else {
+                btn.prop('disabled', true);
+                icon.removeClass('bi-unlock-fill').addClass('bi-lock-fill');
+            }
+        }
+
+        // --- INITIAL PRELOAD: If coming from Dashboard ---
+        const preloadId = '@ViewBag.PreloadCardId';
+        if (preloadId && preloadId !== '') {
+            rfidInput.value = preloadId;
+            // Create a pseudo-event and dispatch it
+            const event = new Event('input', { bubbles: true });
+            rfidInput.dispatchEvent(event);
+        }
+
+        initCamera();
+    </script>
+}

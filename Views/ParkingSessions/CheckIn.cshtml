@@ -1,0 +1,260 @@
+@model Dự_Án_CNPM.Models.ParkingSession
+
+@{
+    ViewData["Title"] = "Trạm Vận Hành Check-in";
+}
+
+<div class="container-fluid py-2">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="display-5 fw-bold text-dark mb-0">Hệ Thống Kiểm Soát Xe Vào</h1>
+            <p class="text-muted opacity-75 mb-0">Vận hành thực tế: Camera ANPR & Quét thẻ RFID.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-2"></i> Quay lại Dashboard
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT: Live Camera Feed -->
+        <div class="col-md-7">
+            <div class="card card-modern border-0 h-100 overflow-hidden bg-dark shadow-lg">
+                <div class="card-header bg-transparent border-0 p-3 d-flex justify-content-between align-items-center position-absolute w-100" style="z-index: 10;">
+                    <span class="badge bg-danger animate__animated animate__flash animate__infinite px-3 py-2">
+                        <i class="bi bi-record-circle-fill me-1"></i> LIVE CAMERA 01
+                    </span>
+                    <button class="btn btn-sm btn-outline-light rounded-pill border-0" onclick="initCamera()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                
+                <div class="video-container position-relative bg-black d-flex align-items-center justify-content-center" style="height: 500px;">
+                    <video id="webcam" autoplay playsinline class="w-100 h-100" style="object-fit: cover;"></video>
+                    <canvas id="captureCanvas" class="d-none" width="640" height="480"></canvas>
+                    
+                    <!-- Overlay Grid -->
+                    <div class="position-absolute w-100 h-100 border border-primary border-2 opacity-25" style="pointer-events: none; border-style: dashed !important; border-width: 5px !important; margin: 40px; width: calc(100% - 80px); height: calc(100% - 80px);"></div>
+                </div>
+
+                <div class="card-footer bg-dark border-0 p-4">
+                    <div class="d-flex gap-3">
+                        <button type="button" class="btn btn-primary btn-lg flex-grow-1 rounded-pill py-3 shadow-lg fw-bold" onclick="captureAndOCR()">
+                            <i class="bi bi-camera-fill me-2"></i> CHỤP ẢNH & NHẬN DIỆN (OCR)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Information & Card Scan -->
+        <div class="col-md-5">
+            <div class="card card-modern border-0 h-100 shadow-lg">
+                <div class="card-body p-4">
+                    <form asp-action="CheckIn" method="post" id="checkinForm">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+                        <input type="hidden" asp-for="CheckInImage" id="CheckInImageBase64" />
+
+                        <!-- RFID Scanner Emulator -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-uppercase small text-primary"><i class="bi bi-p-square"></i> Quét Thẻ Từ (RFID)</label>
+                            <div class="input-group input-group-lg shadow-sm rounded-4 overflow-hidden border-2 border-primary" id="rfidContainer">
+                                <span class="input-group-text bg-primary text-white border-0"><i class="bi bi-credit-card-2-front"></i></span>
+                                <input type="text" id="rfidEmulator" class="form-control border-0 fw-bold" placeholder="NHẬP MÃ THẺ HOẶC QUÉT..." autofocus />
+                            </div>
+                            <div id="rfidFeedback" class="mt-2 x-small fw-bold"></div>
+                        </div>
+
+                        <!-- Real Card Selection (Hidden usually, but kept for logic) -->
+                        <div class="mb-4 d-none">
+                            <label asp-for="CardId" class="form-label">Card IDs</label>
+                            <select asp-for="CardId" id="realCardSelect" class="form-select">
+                                <option value="">Select Card</option>
+                                @foreach (var card in ViewBag.AvailableCards as List<Dự_Án_CNPM.Models.Card>)
+                                {
+                                    <option value="@card.CardId">@card.CardId</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-4">
+                                    <label asp-for="LicensePlate" class="form-label fw-bold small text-uppercase text-muted">Biển Số Xe</label>
+                                    <input asp-for="LicensePlate" id="plateInput" class="form-control form-control-lg border-0 bg-light fw-bold text-primary" placeholder="CHƯA CẬP NHẬT" required />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-4">
+                                    <label asp-for="VehicleType" class="form-label fw-bold small text-uppercase text-muted">Loại Xe</label>
+                                    <select asp-for="VehicleType" id="vehicleType" class="form-select form-select-lg border-0 bg-light fw-bold">
+                                        <option value="Car">Ô tô</option>
+                                        <option value="Motorbike">Xe máy</option>
+                                        <option value="Truck">Xe tải</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="SlotId" class="form-label fw-bold small text-uppercase text-muted">Vị Trí Đỗ Xe</label>
+                            <select asp-for="SlotId" class="form-select form-select-lg border-0 bg-light fw-bold text-success">
+                                <option value="">HỆ THỐNG TỰ ĐỘNG GÁN</option>
+                                @foreach (var slot in ViewBag.AvailableSlots as List<Dự_Án_CNPM.Models.ParkingSlot>)
+                                {
+                                    <option value="@slot.SlotId">@slot.SlotId (Vị trí trống)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="preview-img mb-4 d-none" id="capturePreviewContainer">
+                            <label class="form-label fw-bold small text-uppercase text-muted d-block">Ảnh Đã Chụp</label>
+                            <img id="capturePreview" class="img-fluid rounded-4 shadow-sm border" />
+                        </div>
+
+                        <div class="d-grid mt-2">
+                            <button type="submit" id="btnConfirm" class="btn btn-dark btn-lg py-3 rounded-pill shadow-lg fw-bold">
+                                <i class="bi bi-check-circle me-2"></i> XÁC NHẬN XE VÀO
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('captureCanvas');
+        const rfidInput = document.getElementById('rfidEmulator');
+        const rfidContainer = document.getElementById('rfidContainer');
+        const realSelect = document.getElementById('realCardSelect');
+        const rfidFeedback = document.getElementById('rfidFeedback');
+        const plateInput = document.getElementById('plateInput');
+        const $btnConfirm = $('#btnConfirm');
+
+        // --- DEMO-SAFE: Local card list from Server-side ---
+        const validCards = @Json.Serialize(((List<Dự_Án_CNPM.Models.Card>)ViewBag.AvailableCards).Select(c => c.CardId));
+
+        // Professional Beep sounds
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+
+        function beep(freq, duration, type = 'sine') {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            osc.type = type;
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + duration);
+        }
+
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Camera Error:", err);
+            }
+        }
+
+        // --- HARD-FIX: checkReady() function ---
+        function checkReady() {
+            const cardId = $('#realCardSelect').val();
+            const imageBase64 = $('#CheckInImageBase64').val();
+            const plate = $('#plateInput').val();
+
+            const isCardValid = cardId && cardId !== "";
+            const isImageValid = imageBase64 && imageBase64.length > 500;
+            const isPlateValid = plate && plate !== "" && plate !== "ĐANG QUÉT...";
+
+            if (isCardValid && isImageValid && isPlateValid) {
+                $btnConfirm
+                    .removeClass('btn-dark disabled')
+                    .addClass('btn-primary animate__animated animate__pulse px-5')
+                    .attr('pointer-events', 'auto')
+                    .css({ 'opacity': '1', 'cursor': 'pointer' })
+                    .prop('disabled', false);
+            } else {
+                $btnConfirm
+                    .removeClass('btn-primary animate__animated animate__pulse')
+                    .addClass('btn-dark disabled px-5')
+                    .attr('pointer-events', 'none')
+                    .css({ 'opacity': '0.5', 'cursor': 'not-allowed' })
+                    .prop('disabled', true);
+            }
+        }
+
+        function captureAndOCR() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            $('#CheckInImageBase64').val(dataUrl);
+            $('#capturePreview').attr('src', dataUrl);
+            $('#capturePreviewContainer').removeClass('d-none');
+
+            const mockPlates = ['30A-999.88', '29B-123.45', '51D-888.88', '37A-666.66'];
+            const randomPlate = mockPlates[Math.floor(Math.random() * mockPlates.length)];
+            
+            plateInput.value = "ĐANG QUÉT...";
+            checkReady(); 
+            
+            setTimeout(() => {
+                plateInput.value = randomPlate;
+                beep(880, 0.1); 
+                checkReady();
+            }, 200);
+        }
+
+        // --- NEW: Local Validation (Offline Demo Ready) ---
+        rfidInput.addEventListener('input', function(e) {
+            const cardId = e.target.value.trim().toUpperCase();
+            if (cardId.length < 1) {
+                rfidFeedback.innerHTML = "";
+                rfidContainer.classList.remove('border-success', 'border-danger');
+                $('#realCardSelect').val("");
+                checkReady();
+                return;
+            }
+
+            // Show Loading Icon for 0.5s high-tech feel
+            rfidFeedback.innerHTML = '<span class="text-primary animate__animated animate__flash animate__infinite"><i class="bi bi-clock-history"></i> Đang nhận diện chip...</span>';
+            rfidContainer.classList.remove('border-success', 'border-danger');
+
+            setTimeout(() => {
+                const isValid = validCards.includes(cardId);
+                
+                if (isValid) {
+                    rfidContainer.classList.add('border-success');
+                    rfidContainer.classList.remove('border-danger');
+                    rfidFeedback.innerHTML = '<span class="text-success fs-6 fw-bold"><i class="bi bi-check-circle-fill"></i> THẺ HỢP LỆ - SẴN SÀNG</span>';
+                    beep(660, 0.2); 
+                    
+                    $('#realCardSelect').val(cardId);
+                } else {
+                    rfidContainer.classList.add('border-danger');
+                    rfidContainer.classList.remove('border-success');
+                    rfidFeedback.innerHTML = '<span class="text-danger fs-6 fw-bold"><i class="bi bi-x-circle-fill"></i> THẺ KHÔNG HỢP LỆ / SAI MÃ</span>';
+                    beep(220, 0.3, 'sawtooth'); 
+                    $('#realCardSelect').val("");
+                }
+                checkReady();
+            }, 500);
+        });
+
+        // Trigger checkReady on manual plate input too
+        plateInput.addEventListener('input', checkReady);
+
+        initCamera();
+        checkReady();
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

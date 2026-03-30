@@ -1,0 +1,39 @@
+@model Dự_Án_CNPM.Models.Subscription
+
+@{
+    ViewData["Title"] = "Xóa vé tháng";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="mb-4">
+                <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 5rem;"></i>
+            </div>
+            <h2 class="mb-3">Xác nhận xóa vé tháng?</h2>
+            <p class="text-muted mb-4 fs-5">
+                Bạn có chắc chắn muốn xóa lượt đăng ký vé tháng của khách hàng <span class="fw-bold text-dark">@Model.CustomerName</span>? 
+                Hành động này không thể hoàn tác.
+            </p>
+            
+            <div class="card mb-4 border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <p class="mb-1"><span class="text-muted">Biển số:</span> <span class="fw-bold fs-5">@Model.LicensePlate</span></p>
+                    <p class="mb-0"><span class="text-muted">Loại xe:</span> <span class="fw-bold">@Model.VehicleType</span></p>
+                </div>
+            </div>
+
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <button type="submit" class="btn btn-danger btn-lg px-4 gap-3">
+                        <i class="bi bi-trash"></i> Xóa vĩnh viễn
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="bi bi-x-circle"></i> Hủy bỏ
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

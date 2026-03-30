@@ -1,0 +1,106 @@
+@model IEnumerable<Dự_Án_CNPM.Models.Subscription>
+
+@{
+    ViewData["Title"] = "Danh sách vé tháng";
+}
+
+<div class="container-fluid py-2">
+    <div class="d-flex align-items-center justify-content-between mb-5">
+        <div>
+            <h1 class="display-5 fw-bold text-dark mb-0">Quản Lý Vé Tháng</h1>
+            <p class="text-muted opacity-75 mb-0">Theo dõi khách hàng thân thiết và thời hạn thuê bao.</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-primary rounded-pill px-5 py-3 shadow-lg fw-bold">
+                <i class="bi bi-person-plus-fill me-2"></i> ĐĂNG KÝ MỚI
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5 bg-light">
+        <div class="card-body p-4">
+            <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Tìm kiếm khách hàng</label>
+                    <div class="input-group shadow-sm rounded-pill overflow-hidden bg-white border-0">
+                        <span class="input-group-text bg-transparent border-0 ps-3 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" name="searchString" class="form-control border-0 py-2" value="@ViewData["CurrentFilter"]" placeholder="Nhập tên khách hoặc biển số xe..." />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 shadow-sm fw-bold">
+                        TÌM KIẾM
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100 rounded-pill py-2">LÀM MỚI</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th class="ps-4">Khách Hàng</th>
+                    <th>Liên Hệ</th>
+                    <th>Biển Số</th>
+                    <th>Loại Xe</th>
+                    <th>Thời Hạn</th>
+                    <th class="text-center">Trạng Thái</th>
+                    <th class="text-center">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var isExpired = item.EndDate < DateTime.Now;
+                    <tr class="@(isExpired ? "opacity-75" : "")">
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark fs-5">@item.CustomerName</div>
+                            <div class="small text-muted">ID: SUB-@item.Id.ToString("D3")</div>
+                        </td>
+                        <td>
+                            <div class="small fw-bold"><i class="bi bi-telephone me-1"></i> @item.PhoneNumber</div>
+                        </td>
+                        <td><span class="badge bg-dark px-3 py-2 fs-6">@item.LicensePlate</span></td>
+                        <td class="fw-bold">@item.VehicleType</td>
+                        <td>
+                            <div class="small text-muted">Hết hạn:</div>
+                            <div class="fw-bold text-@(isExpired ? "danger" : "dark")">@item.EndDate.ToString("dd/MM/yyyy")</div>
+                        </td>
+                        <td class="text-center">
+                            @if (item.IsActive && !isExpired)
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success px-3 py-2 rounded-pill">ĐANG HOẠT ĐỘNG</span>
+                            }
+                            else if (isExpired)
+                            {
+                                <span class="badge bg-danger-subtle text-danger border border-danger px-3 py-2 rounded-pill">ĐÃ HẾT HẠN</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary px-3 py-2 rounded-pill">VÔ HIỆU HÓA</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group shadow-sm rounded-pill overflow-hidden border">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-white btn-sm px-3 py-2 border-0" title="Sửa">
+                                    <i class="bi bi-pencil text-primary"></i>
+                                </a>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-white btn-sm px-3 py-2 border-0" title="Chi tiết">
+                                    <i class="bi bi-info-circle text-info"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-white btn-sm px-3 py-2 border-0" title="Xóa">
+                                    <i class="bi bi-trash text-danger"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,130 @@
+@model IEnumerable<Dự_Án_CNPM.Models.ParkingSlot>
+
+@{
+    ViewData["Title"] = "Sơ đồ bãi xe";
+    var activeSessions = ViewBag.ActiveSessions as Dictionary<string, string>;
+    int availableCount = ViewBag.AvailableCount ?? 0;
+    int totalCount = Model.Count();
+}
+
+<style>
+    .parking-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 20px;
+        padding: 30px;
+    }
+    .parking-slot {
+        aspect-ratio: 1 / 1.3;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 16px;
+        color: white;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        text-align: center;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .parking-slot:hover {
+        transform: scale(1.05) translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .parking-slot.occupied {
+        background: linear-gradient(145deg, #ff416c, #ff4b2b);
+    }
+    .parking-slot.available {
+        background: linear-gradient(145deg, #00b09b, #96c93d);
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+    }
+    .slot-id {
+        font-weight: 800;
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+        font-family: 'Poppins', sans-serif;
+    }
+    .slot-plate {
+        font-size: 0.75rem;
+        background: rgba(0,0,0,0.4);
+        padding: 4px 8px;
+        border-radius: 6px;
+        max-width: 90%;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .status-indicator {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 10px #fff;
+    }
+</style>
+
+<div class="container-fluid py-2">
+    <div class="d-flex align-items-center justify-content-between mb-5">
+        <div>
+            <h1 class="display-5 fw-bold text-dark mb-0">Hệ Thống Sơ Đồ Trực Quan</h1>
+            <p class="text-muted opacity-75 mb-0">Theo dõi 20 vị trí đỗ xe (A01 - B10) thời gian thực.</p>
+        </div>
+        <div>
+            <div class="bg-light border rounded-pill px-4 py-3 shadow-sm">
+                <div class="d-flex align-items-center">
+                    <div class="me-4 text-center">
+                        <div class="fs-3 fw-bold text-primary">@availableCount</div>
+                        <div class="x-small text-uppercase opacity-50 fw-bold">Trống</div>
+                    </div>
+                    <div style="width: 120px;">
+                        @{
+                            var percent = totalCount > 0 ? (availableCount * 100 / totalCount) : 0;
+                        }
+                        <div class="progress bg-secondary-subtle" style="height: 10px; border-radius: 10px;">
+                            <div class="progress-bar bg-primary shadow-sm" role="progressbar" style="width: @percent%; border-radius: 10px;"></div>
+                        </div>
+                        <div class="text-end x-small mt-2 fw-bold text-primary">@percent% AVAILABLE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-3 bg-white border rounded-4 d-flex gap-5 justify-content-center mb-5 shadow-sm">
+        <div class="d-flex align-items-center">
+            <span class="d-inline-block rounded-circle bg-success me-2" style="width: 14px; height: 14px; box-shadow: 0 0 10px rgba(25, 135, 84, 0.5);"></span>
+            <span class="small fw-bold text-uppercase">Vị trí trống</span>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="d-inline-block rounded-circle bg-danger me-2" style="width: 14px; height: 14px; box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);"></span>
+            <span class="small fw-bold text-uppercase">Vị trí có xe</span>
+        </div>
+    </div>
+    
+    <div class="parking-grid">
+        @foreach (var slot in Model)
+        {
+            var isOccupied = slot.Status == "Occupied";
+            var licensePlate = isOccupied && activeSessions != null && activeSessions.ContainsKey(slot.SlotId) 
+                                ? activeSessions[slot.SlotId] : "";
+
+            <div class="parking-slot @(isOccupied ? "occupied" : "available") shadow-sm" title="Vị trí: @slot.SlotId">
+                <div class="status-indicator" style="background: #fff; opacity: @(isOccupied ? "1" : "0.3")"></div>
+                <div class="slot-id">@slot.SlotId</div>
+                @if (isOccupied)
+                {
+                    <div class="slot-plate">@licensePlate</div>
+                    <div class="x-small mt-2 fw-bold" style="opacity: 0.8;"><i class="bi bi-clock"></i> OCCUPIED</div>
+                }
+                else
+                {
+                    <div class="small fw-bold" style="opacity: 0.6;">SẴN SÀNG</div>
+                }
+            </div>
+        }
+    </div>
+</div>
+

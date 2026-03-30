@@ -1,0 +1,116 @@
+@{
+    ViewData["Title"] = "Hệ Thống Quản Lý Thông Minh";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PARKING PRO</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body {
+            background: url('/images/smart_parking_bg.png') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(10, 11, 16, 0.9) 0%, rgba(0, 114, 255, 0.3) 100%);
+            z-index: -1;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff !important;
+            border-radius: 15px;
+            padding: 0.8rem 1.2rem;
+        }
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+        }
+        .btn-login {
+            background: linear-gradient(90deg, var(--primary-blue), var(--primary-cyan));
+            border: none;
+            border-radius: 15px;
+            padding: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 20px rgba(0, 114, 255, 0.3);
+            transition: all 0.3s;
+        }
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 114, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card text-white">
+        <div class="text-center mb-5">
+            <div class="bg-primary rounded-4 p-3 d-inline-block shadow-lg mb-3">
+                <i class="bi bi-p-square-fill fs-1"></i>
+            </div>
+            <h2 class="fw-bold brand-text mb-0">PARKING <span class="text-primary-cyan">PRO</span></h2>
+            <p class="text-light opacity-50">Hệ Thống Quản Lý Thành Phố Thông Minh</p>
+        </div>
+
+        <form asp-action="Login" method="post">
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert bg-danger text-white border-0 rounded-4 mb-4 small">
+                    <i class="bi bi-exclamation-octagon me-2"></i> @ViewBag.Error
+                </div>
+            }
+            
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-primary-cyan">ID TRUY CẬP</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-0 text-white opacity-50"><i class="bi bi-person"></i></span>
+                    <input type="text" name="username" class="form-control" placeholder="Nhập tên đăng nhập" required autofocus>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <label class="form-label small fw-bold text-primary-cyan">MẬT MÃ</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-0 text-white opacity-50"><i class="bi bi-lock"></i></span>
+                    <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu" required>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-login w-100 mb-4" type="submit">Xác thực hệ thống</button>
+        </form>
+
+        <p class="text-center small opacity-50 mb-0">&copy; 2026 Advanced Smart Parking Solution</p>
+    </div>
+</body>
+</html>
+

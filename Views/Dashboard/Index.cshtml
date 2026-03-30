@@ -1,0 +1,227 @@
+@model Dự_Án_CNPM.Models.ReportViewModel
+
+@{
+    ViewData["Title"] = "Dashboard Thống Kê";
+}
+
+<div class="container-fluid py-2">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="display-5 fw-bold text-white text-gradient mb-0">Hệ Thống Quản Lý Thông Minh</h1>
+            <p class="text-light opacity-75 mb-0">Theo dõi doanh thu và hoạt động bãi xe thời gian thực.</p>
+        </div>
+        <div>
+            <a asp-action="ExportExcel" asp-route-startDate="@Model.StartDate" asp-route-endDate="@Model.EndDate" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <i class="bi bi-file-earmark-excel me-2"></i> Xuất Báo Cáo Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div class="card card-modern border-0 mb-4 bg-dark text-white" style="--bs-bg-opacity: .4;">
+        <div class="card-body p-4">
+            <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="startDate" class="form-label small fw-bold text-primary-cyan">Từ ngày</label>
+                    <div class="input-group border-bottom border-primary-cyan">
+                        <span class="input-group-text bg-transparent border-0 text-white"><i class="bi bi-calendar-event"></i></span>
+                        <input type="date" name="startDate" id="startDate" class="form-control bg-transparent border-0 text-white" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="endDate" class="form-label small fw-bold text-primary-cyan">Đến ngày</label>
+                    <div class="input-group border-bottom border-primary-cyan">
+                        <span class="input-group-text bg-transparent border-0 text-white"><i class="bi bi-calendar-check"></i></span>
+                        <input type="date" name="endDate" id="endDate" class="form-control bg-transparent border-0 text-white" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 shadow">
+                        <i class="bi bi-cpu me-2"></i> Phân Tích Dữ Liệu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Dashboard -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card h-100 border-0 shadow bg-primary text-white p-2 animate__animated animate__fadeInUp">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3 text-white-50">
+                        <i class="bi bi-wallet2 fs-4"></i>
+                        <span class="small">+12% vs tháng trước</span>
+                    </div>
+                    <h6 class="card-title text-uppercase opacity-75 mb-1 small fw-bold">Tổng doanh thu</h6>
+                    <h2 class="fw-bold mb-0">@Model.TotalRevenue.ToString("N0")<span class="fs-6 ms-1 fw-normal opacity-75">đ</span></h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100 border-0 shadow bg-info text-white p-2 animate__animated animate__fadeInUp animate__delay-1s">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3 text-white-50">
+                        <i class="bi bi-lightning-charge fs-4"></i>
+                        <span class="small">Real-time</span>
+                    </div>
+                    <h6 class="card-title text-uppercase opacity-75 mb-1 small fw-bold">Hôm nay</h6>
+                    <h2 class="fw-bold mb-0">@Model.TodayRevenue.ToString("N0")<span class="fs-6 ms-1 fw-normal opacity-75">đ</span></h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100 border-0 shadow bg-success text-white p-2 animate__animated animate__fadeInUp animate__delay-2s">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3 text-white-50">
+                        <i class="bi bi-truck-flatbed fs-4"></i>
+                        <span class="small">@Model.Sessions.Count lượt</span>
+                    </div>
+                    <h6 class="card-title text-uppercase opacity-75 mb-1 small fw-bold">Tổng lượt xe</h6>
+                    <h2 class="fw-bold mb-0">@Model.TotalSessions</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card h-100 border-0 shadow bg-warning text-white p-2 animate__animated animate__fadeInUp animate__delay-3s">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3 text-white-50">
+                        <i class="bi bi-p-circle fs-4"></i>
+                        <span class="small">Sức chứa 20/20</span>
+                    </div>
+                    <h6 class="card-title text-uppercase opacity-75 mb-1 small fw-bold">Xe trong bãi</h6>
+                    <h2 class="fw-bold mb-0">@Model.ActiveSessionsCount</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Chart Section -->
+        <div class="col-lg-8">
+            <div class="card card-modern border-0 h-100">
+                <div class="card-header bg-transparent border-0 py-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-activity text-primary me-2"></i> Xu Hướng Doanh Thu</h5>
+                    <div class="badge bg-primary-soft text-primary px-3 rounded-pill">7 Ngày Gần Nhất</div>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <canvas id="revenueChart" style="max-height: 320px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Right info -->
+        <div class="col-lg-4">
+            <div class="card card-modern border-0 h-100 bg-primary text-white text-center p-4">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <div class="icon-shape bg-white text-primary rounded-circle mb-4" style="width: 80px; height: 80px; font-size: 2rem; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">Hệ thống An Toàn</h3>
+                    <p class="opacity-75 mb-4">Mọi dữ liệu ra vào đều được mã hóa và lưu trữ an toàn trên nền tảng Cloud.</p>
+                    <a asp-controller="ParkingSlots" asp-action="Map" class="btn btn-light rounded-pill px-5 fw-bold shadow">Xem Sơ Đồ <i class="bi bi-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Table -->
+    <div class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-list-stars text-primary me-2"></i> Nhật Ký Giao Dịch
+            </h4>
+            <span class="badge bg-light text-dark rounded-pill border px-3">@Model.Sessions.Count bản ghi</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-modern">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Mã</th>
+                        <th>Biển số</th>
+                        <th>Loại xe</th>
+                        <th>Thời gian Vào</th>
+                        <th>Thời gian Ra</th>
+                        <th class="text-end">Thanh toán</th>
+                        <th class="text-center">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var session in Model.Sessions)
+                    {
+                        <tr>
+                            <td class="ps-4 text-muted x-small">#@session.SessionId</td>
+                            <td><span class="badge bg-dark px-3 py-2 fs-6">@session.LicensePlate</span></td>
+                            <td class="fw-bold text-primary">@session.VehicleType</td>
+                            <td class="small">@session.CheckInTime.ToString("dd/MM HH:mm")</td>
+                            <td class="small">@(session.CheckOutTime?.ToString("dd/MM HH:mm") ?? "-")</td>
+                            <td class="text-end fw-bold text-success">@(session.TotalPrice?.ToString("N0") ?? "-") đ</td>
+                            <td class="text-center">
+                                @if (session.Status == "Completed")
+                                {
+                                    <span class="badge bg-success shadow-sm rounded-pill px-3">Hoàn Tất</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark shadow-sm rounded-pill px-3">Trong Bãi</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(0, 210, 255, 0.5)');
+        gradient.addColorStop(1, 'rgba(0, 114, 255, 0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.ChartLabels)),
+                datasets: [{
+                    label: 'Doanh thu',
+                    data: @Html.Raw(Json.Serialize(Model.ChartData)),
+                    borderColor: '#00d2ff',
+                    borderWidth: 4,
+                    fill: true,
+                    backgroundColor: gradient,
+                    tension: 0.4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#0072ff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } },
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { borderDash: [5, 5] },
+                        ticks: {
+                            callback: function(value) { return value.toLocaleString() + ' đ'; }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    </script>
+}
+
